@@ -8,6 +8,8 @@ import (
 	"math/rand"
 	"net/http"
 	"reflect"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -94,6 +96,45 @@ func init() {
 	}()
 }
 
+func randomHandle(w http.ResponseWriter, _ *http.Request) {
+	joke := knownJokesCache.RandomJoke()
+	j, err := json.Marshal(joke)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(j)
+}
+
+func specificHandle(w http.ResponseWriter, req *http.Request) {
+	id_str := strings.TrimPrefix(req.URL.Path, "/get_joke/")
+	key, err := strconv.Atoi(id_str)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	joke, ok := knownJokesCache.GetJoke(key)
+	if !ok {
+		http.Error(w, "No joke! With this id", http.StatusNotFound)
+		return
+	}
+
+	j, err := json.Marshal(joke)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(j)
+}
+
 func main() {
+	http.HandleFunc("/get_joke/", specificHandle)
+	http.HandleFunc("/random_joke/", randomHandle)
+	http.ListenAndServe(":8080", nil)
 	fmt.Printf("%+v", knownJokesCache)
 }
