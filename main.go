@@ -88,7 +88,7 @@ func updateJokeCache() {
 func init() {
 	updateJokeCache()
 
-	ticker := time.Tick(3 * time.Second)
+	ticker := time.Tick(5 * time.Minute)
 	go func() {
 		for _ = range ticker {
 			updateJokeCache()
